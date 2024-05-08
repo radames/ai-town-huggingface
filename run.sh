@@ -10,5 +10,7 @@ run_convex_command deploy &
 
 # run_convex_command dev --run init --until-success &
 # run_convex_command dev --tail-logs &
+# you need to set VITE_CONVEX_URL to the Vite Server proxied version
+export VITE_CONVEX_URL=https://$SPACE_HOST/backend.convex.cloud
 npm run dev:frontend -- --host 0.0.0.0 &
 run_convex_command dev
