@@ -1,10 +1,11 @@
 ---
-title: Ai Town
-emoji: 📈
+title: AI Town
+emoji: 🏠💻💌
 colorFrom: pink
 colorTo: red
 sdk: docker
+app_port: 5173
 pinned: false
 ---
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+# AI Town 🏠💻💌
