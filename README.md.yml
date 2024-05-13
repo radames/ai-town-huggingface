@@ -1,0 +1,7 @@
+title: AI Town on HuggingFace
+emoji: 🏠💻💌
+colorFrom: green
+colorTo: red
+sdk: docker
+app_port: 5173
+pinned: false
