@@ -4,13 +4,18 @@ run_convex_command() {
 }
 
 ./convex-local-backend &
-run_convex_command env set LLM_API_KEY $LLM_API_KEY &
+run_convex_command env set LLM_API_KEY $HF_TOKEN &
 run_convex_command dev --run init --until-success &
 run_convex_command deploy &
 
 # run_convex_command dev --run init --until-success &
 # run_convex_command dev --tail-logs &
 # you need to set VITE_CONVEX_URL to the Vite Server proxied version
-export VITE_CONVEX_URL=https://$SPACE_HOST/backend.convex.cloud
+if [ -z "$SPACE_HOST" ]; then
+    export VITE_CONVEX_URL=http://localhost:5173/backend.convex.cloud
+else
+    export VITE_CONVEX_URL=https://$SPACE_HOST/backend.convex.cloud
+fi
+
 npm run dev:frontend -- --host 0.0.0.0 &
 run_convex_command dev

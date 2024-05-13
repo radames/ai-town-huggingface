@@ -1,13 +1,13 @@
-import OpenAI from 'openai';
-import { ChatCompletionChunk } from 'openai/resources';
+import { HfInference } from "@huggingface/inference";
 
 export const LLM_CONFIG = {
   /* Hugginface config: */
   ollama: false,
   huggingface: true,
-  url: 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct',
-  chatModel: 'meta-llama/Meta-Llama-3-8B-Instruct',
-  embeddingModel: 'https://api-inference.huggingface.co/models/mixedbread-ai/mxbai-embed-large-v1',
+  url: "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct",
+  chatModel: "meta-llama/Meta-Llama-3-8B-Instruct",
+  embeddingModel:
+    "https://api-inference.huggingface.co/models/mixedbread-ai/mxbai-embed-large-v1",
   embeddingDimension: 1024,
 
   /* Ollama (local) config:
@@ -44,10 +44,10 @@ function apiUrl(path: string) {
     process.env.OLLAMA_HOST ??
     process.env.OPENAI_API_BASE ??
     LLM_CONFIG.url;
-  if (host.endsWith('/') && path.startsWith('/')) {
+  if (host.endsWith("/") && path.startsWith("/")) {
     return host + path.slice(1);
-  } else if (!host.endsWith('/') && !path.startsWith('/')) {
-    return host + '/' + path;
+  } else if (!host.endsWith("/") && !path.startsWith("/")) {
+    return host + "/" + path;
   } else {
     return host + path;
   }
@@ -60,70 +60,67 @@ function apiKey() {
 const AuthHeaders = (): Record<string, string> =>
   apiKey()
     ? {
-        Authorization: 'Bearer ' + apiKey(),
+        Authorization: "Bearer " + apiKey(),
       }
     : {};
 
 // Overload for non-streaming
 export async function chatCompletion(
-  body: Omit<CreateChatCompletionRequest, 'model'> & {
-    model?: CreateChatCompletionRequest['model'];
+  body: Omit<CreateChatCompletionRequest, "model"> & {
+    model?: CreateChatCompletionRequest["model"];
   } & {
     stream?: false | null | undefined;
-  },
+  }
 ): Promise<{ content: string; retries: number; ms: number }>;
 // Overload for streaming
 export async function chatCompletion(
-  body: Omit<CreateChatCompletionRequest, 'model'> & {
-    model?: CreateChatCompletionRequest['model'];
+  body: Omit<CreateChatCompletionRequest, "model"> & {
+    model?: CreateChatCompletionRequest["model"];
   } & {
     stream?: true;
-  },
+  }
 ): Promise<{ content: ChatCompletionContent; retries: number; ms: number }>;
 export async function chatCompletion(
-  body: Omit<CreateChatCompletionRequest, 'model'> & {
-    model?: CreateChatCompletionRequest['model'];
-  },
+  body: Omit<CreateChatCompletionRequest, "model"> & {
+    model?: CreateChatCompletionRequest["model"];
+  }
 ) {
   assertApiKey();
   // OLLAMA_MODEL is legacy
   body.model =
-    body.model ?? process.env.LLM_MODEL ?? process.env.OLLAMA_MODEL ?? LLM_CONFIG.chatModel;
-  const stopWords = body.stop ? (typeof body.stop === 'string' ? [body.stop] : body.stop) : [];
-  if (LLM_CONFIG.ollama || LLM_CONFIG.huggingface) stopWords.push('<|eot_id|>');
+    body.model ??
+    process.env.LLM_MODEL ??
+    process.env.OLLAMA_MODEL ??
+    LLM_CONFIG.chatModel;
+  const stopWords = body.stop
+    ? typeof body.stop === "string"
+      ? [body.stop]
+      : body.stop
+    : [];
+  if (LLM_CONFIG.ollama || LLM_CONFIG.huggingface) stopWords.push("<|eot_id|>");
 
   const {
     result: content,
     retries,
     ms,
   } = await retryWithBackoff(async () => {
-    const openai = new OpenAI({
-      apiKey: apiKey(),
-      baseURL: apiUrl('/v1/'),
-    });
-
-    //@ts-ignore
-    const completion = await openai.chat.completions.create({ ...body });
-
-    // if (!result.ok) {
-    //   const error = await result.text();
-    //   console.error({ error });
-    //   if (result.status === 404 && LLM_CONFIG.ollama) {
-    //     await tryPullOllama(body.model!, error);
-    //   }
-    //   throw {
-    //     retry: result.status === 429 || result.status >= 500,
-    //     error: new Error(`Chat completion failed with code ${result.status}: ${error}`),
-    //   };
-    // }
+    const hf = new HfInference(apiKey());
+    const model = hf.endpoint(apiUrl("/v1/chat/completions"));
     if (body.stream) {
+      const completion = model.chatCompletionStream({
+        ...body,
+      });
       return new ChatCompletionContent(completion, stopWords);
     } else {
+      const completion = await model.chatCompletion({
+        ...body,
+      });
       const content = completion.choices[0].message?.content;
       if (content === undefined) {
-        throw new Error('Unexpected result from OpenAI: ' + JSON.stringify(completion));
+        throw new Error(
+          "Unexpected result from OpenAI: " + JSON.stringify(completion)
+        );
       }
-      console.log(content);
       return content;
     }
   });
@@ -136,17 +133,20 @@ export async function chatCompletion(
 }
 
 export async function tryPullOllama(model: string, error: string) {
-  if (error.includes('try pulling')) {
-    console.error('Embedding model not found, pulling from Ollama');
-    const pullResp = await fetch(apiUrl('/api/pull'), {
-      method: 'POST',
+  if (error.includes("try pulling")) {
+    console.error("Embedding model not found, pulling from Ollama");
+    const pullResp = await fetch(apiUrl("/api/pull"), {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ name: model }),
     });
-    console.log('Pull response', await pullResp.text());
-    throw { retry: true, error: `Dynamically pulled model. Original error: ${error}` };
+    console.log("Pull response", await pullResp.text());
+    throw {
+      retry: true,
+      error: `Dynamically pulled model. Original error: ${error}`,
+    };
   }
 }
 
@@ -155,7 +155,7 @@ export async function fetchEmbeddingBatch(texts: string[]) {
     return {
       ollama: true as const,
       embeddings: await Promise.all(
-        texts.map(async (t) => (await ollamaFetchEmbedding(t)).embedding),
+        texts.map(async (t) => (await ollamaFetchEmbedding(t)).embedding)
       ),
     };
   }
@@ -163,14 +163,14 @@ export async function fetchEmbeddingBatch(texts: string[]) {
 
   if (LLM_CONFIG.huggingface) {
     const result = await fetch(LLM_CONFIG.embeddingModel, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'X-Wait-For-Model': 'true',
+        "Content-Type": "application/json",
+        "X-Wait-For-Model": "true",
         ...AuthHeaders(),
       },
       body: JSON.stringify({
-        inputs: texts.map((text) => text.replace(/\n/g, ' ')),
+        inputs: texts.map((text) => text.replace(/\n/g, " ")),
       }),
     });
     const embeddings = await result.json();
@@ -185,29 +185,31 @@ export async function fetchEmbeddingBatch(texts: string[]) {
     retries,
     ms,
   } = await retryWithBackoff(async () => {
-    const result = await fetch(apiUrl('/v1/embeddings'), {
-      method: 'POST',
+    const result = await fetch(apiUrl("/v1/embeddings"), {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...AuthHeaders(),
       },
 
       body: JSON.stringify({
         model: LLM_CONFIG.embeddingModel,
-        input: texts.map((text) => text.replace(/\n/g, ' ')),
+        input: texts.map((text) => text.replace(/\n/g, " ")),
       }),
     });
     if (!result.ok) {
       throw {
         retry: result.status === 429 || result.status >= 500,
-        error: new Error(`Embedding failed with code ${result.status}: ${await result.text()}`),
+        error: new Error(
+          `Embedding failed with code ${result.status}: ${await result.text()}`
+        ),
       };
     }
     return (await result.json()) as CreateEmbeddingResponse;
   });
   if (json.data.length !== texts.length) {
     console.error(json);
-    throw new Error('Unexpected number of embeddings');
+    throw new Error("Unexpected number of embeddings");
   }
   const allembeddings = json.data;
   allembeddings.sort((a, b) => a.index - b.index);
@@ -228,10 +230,10 @@ export async function fetchEmbedding(text: string) {
 export async function fetchModeration(content: string) {
   assertApiKey();
   const { result: flagged } = await retryWithBackoff(async () => {
-    const result = await fetch(apiUrl('/v1/moderations'), {
-      method: 'POST',
+    const result = await fetch(apiUrl("/v1/moderations"), {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...AuthHeaders(),
       },
 
@@ -242,7 +244,9 @@ export async function fetchModeration(content: string) {
     if (!result.ok) {
       throw {
         retry: result.status === 429 || result.status >= 500,
-        error: new Error(`Embedding failed with code ${result.status}: ${await result.text()}`),
+        error: new Error(
+          `Embedding failed with code ${result.status}: ${await result.text()}`
+        ),
       };
     }
     return (await result.json()) as { results: { flagged: boolean }[] };
@@ -253,9 +257,9 @@ export async function fetchModeration(content: string) {
 export function assertApiKey() {
   if (!LLM_CONFIG.ollama && !apiKey()) {
     throw new Error(
-      '\n  Missing LLM_API_KEY in environment variables.\n\n' +
-        (LLM_CONFIG.ollama ? 'just' : 'npx') +
-        " convex env set LLM_API_KEY 'your-key'",
+      "\n  Missing LLM_API_KEY in environment variables.\n\n" +
+        (LLM_CONFIG.ollama ? "just" : "npx") +
+        " convex env set LLM_API_KEY 'your-key'"
     );
   }
 }
@@ -266,7 +270,7 @@ const RETRY_JITTER = 100; // In ms
 type RetryError = { retry: boolean; error: any };
 
 export async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
+  fn: () => Promise<T>
 ): Promise<{ retries: number; result: T; ms: number }> {
   let i = 0;
   for (; i <= RETRY_BACKOFF.length; i++) {
@@ -280,11 +284,13 @@ export async function retryWithBackoff<T>(
       if (i < RETRY_BACKOFF.length) {
         if (retryError.retry) {
           console.log(
-            `Attempt ${i + 1} failed, waiting ${RETRY_BACKOFF[i]}ms to retry...`,
-            Date.now(),
+            `Attempt ${i + 1} failed, waiting ${
+              RETRY_BACKOFF[i]
+            }ms to retry...`,
+            Date.now()
           );
           await new Promise((resolve) =>
-            setTimeout(resolve, RETRY_BACKOFF[i] + RETRY_JITTER * Math.random()),
+            setTimeout(resolve, RETRY_BACKOFF[i] + RETRY_JITTER * Math.random())
           );
           continue;
         }
@@ -293,7 +299,7 @@ export async function retryWithBackoff<T>(
       else throw e;
     }
   }
-  throw new Error('Unreachable');
+  throw new Error("Unreachable");
 }
 
 // Lifted from openai's package
@@ -308,7 +314,7 @@ export interface LLMMessage {
    * The role of the messages author. One of `system`, `user`, `assistant`, or
    * `function`.
    */
-  role: 'system' | 'user' | 'assistant' | 'function';
+  role: "system" | "user" | "assistant" | "function";
 
   /**
    * The name of the author of this message. `name` is required if role is
@@ -343,7 +349,7 @@ interface CreateChatCompletionResponse {
   choices: {
     index?: number;
     message?: {
-      role: 'system' | 'user' | 'assistant';
+      role: "system" | "user" | "assistant";
       content: string;
     };
     finish_reason?: string;
@@ -472,7 +478,7 @@ export interface CreateChatCompletionRequest {
   user?: string;
   tools?: {
     // The type of the tool. Currently, only function is supported.
-    type: 'function';
+    type: "function";
     function: {
       /**
        * The name of the function to be called. Must be a-z, A-Z, 0-9, or
@@ -508,13 +514,13 @@ export interface CreateChatCompletionRequest {
    * `auto` is the default if functions are present.
    */
   tool_choice?:
-    | 'none' // none means the model will not call a function and instead generates a message.
-    | 'auto' // auto means the model can pick between generating a message or calling a function.
+    | "none" // none means the model will not call a function and instead generates a message.
+    | "auto" // auto means the model can pick between generating a message or calling a function.
     // Specifies a tool the model should use. Use to force the model to call
     // a specific function.
     | {
         // The type of the tool. Currently, only function is supported.
-        type: 'function';
+        type: "function";
         function: { name: string };
       };
   // Replaced by "tools"
@@ -563,7 +569,7 @@ export interface CreateChatCompletionRequest {
    * finish_reason="length", which indicates the generation exceeded max_tokens
    * or the conversation exceeded the max context length.
    */
-  response_format?: { type: 'text' | 'json_object' };
+  response_format?: { type: "text" | "json_object" };
 }
 
 // Checks whether a suffix of s1 is a prefix of s2. For example,
@@ -584,7 +590,10 @@ export class ChatCompletionContent {
   private readonly completion: AsyncIterable<ChatCompletionChunk>;
   private readonly stopWords: string[];
 
-  constructor(completion: AsyncIterable<ChatCompletionChunk>, stopWords: string[]) {
+  constructor(
+    completion: AsyncIterable<ChatCompletionChunk>,
+    stopWords: string[]
+  ) {
     this.completion = completion;
     this.stopWords = stopWords;
   }
@@ -598,7 +607,7 @@ export class ChatCompletionContent {
   // stop words in OpenAI api don't always work.
   // So we have to truncate on our side.
   async *read() {
-    let lastFragment = '';
+    let lastFragment = "";
     for await (const data of this.readInner()) {
       lastFragment += data;
       let hasOverlap = false;
@@ -614,13 +623,13 @@ export class ChatCompletionContent {
       }
       if (hasOverlap) continue;
       yield lastFragment;
-      lastFragment = '';
+      lastFragment = "";
     }
     yield lastFragment;
   }
 
   async readAll() {
-    let allContent = '';
+    let allContent = "";
     for await (const chunk of this.read()) {
       allContent += chunk;
     }
@@ -630,10 +639,10 @@ export class ChatCompletionContent {
 
 export async function ollamaFetchEmbedding(text: string) {
   const { result } = await retryWithBackoff(async () => {
-    const resp = await fetch(apiUrl('/api/embeddings'), {
-      method: 'POST',
+    const resp = await fetch(apiUrl("/api/embeddings"), {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ model: LLM_CONFIG.embeddingModel, prompt: text }),
     });

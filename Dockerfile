@@ -21,7 +21,7 @@ WORKDIR $HOME/app
 RUN git clone https://github.com/a16z-infra/ai-town.git . && \
     git checkout f005c46d1759b47bb3ade8d41952a713c4faf331 
 
-RUN npm install --include=dev openai
+RUN npm install --include=dev @huggingface/inference
 
 RUN curl -L -O https://github.com/get-convex/convex-backend/releases/download/precompiled-2024-05-07-13337fd/convex-local-backend-x86_64-unknown-linux-gnu.zip && \
     unzip convex-local-backend-x86_64-unknown-linux-gnu.zip 
