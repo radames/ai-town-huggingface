@@ -31,5 +31,8 @@ COPY ./vite.config.ts ./
 COPY ./constants.ts ./music.ts ./convex/
 COPY ./characters.ts ./gentle.js ./data/
 COPY ./PixiStaticMap.tsx ./src/components/
+COPY ./Button.tsx ./src/components/buttons/Button.tsx
+COPY ./App.tsx ./src/App.tsx
 COPY ./run.sh ./
+
 CMD ["./run.sh"]
