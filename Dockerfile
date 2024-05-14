@@ -26,13 +26,13 @@ RUN npm install --include=dev @huggingface/inference
 RUN curl -L -O https://github.com/get-convex/convex-backend/releases/download/precompiled-2024-05-07-13337fd/convex-local-backend-x86_64-unknown-linux-gnu.zip && \
     unzip convex-local-backend-x86_64-unknown-linux-gnu.zip 
 
-COPY ./llm.ts ./convex/util/
-COPY ./vite.config.ts ./
-COPY ./constants.ts ./music.ts ./convex/
-COPY ./characters.ts ./gentle.js ./data/
-COPY ./PixiStaticMap.tsx ./src/components/
-COPY ./Button.tsx ./src/components/buttons/Button.tsx
-COPY ./App.tsx ./src/App.tsx
-COPY ./run.sh ./
+COPY ./patches/llm.ts ./convex/util/
+COPY ./patches/vite.config.ts ./
+COPY ./patches/constants.ts ./patches/music.ts ./convex/
+COPY ./patches/characters.ts ./patches/gentle.js ./data/
+COPY ./patches/PixiStaticMap.tsx ./src/components/
+COPY ./patches/Button.tsx ./src/components/buttons/Button.tsx
+COPY ./patches/App.tsx ./src/App.tsx
+COPY ./patches/run.sh ./
 
 CMD ["./run.sh"]
