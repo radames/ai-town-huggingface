@@ -1,5 +1,7 @@
 # AI Town 🏠💻💌 on Hugging Face 🤗
 
+[**Demo on Hugging Face Spaces**](https://huggingface.co/spaces/radames/ai-town)
+
 AI Town is a very cool project by [Yoko](https://github.com/ykhli) et [al.](https://github.com/a16z-infra/ai-town), a virtual town with live AI characters where they can chat and socialize. You can also interact with them by sending them messages.
 
 This repository contains a few code patches to make AI Town run on [Hugging Face 🤗 Spaces](https://huggingface.co/spaces), as well as a Dockerfile capable of running [Convex open-source backend](https://github.com/get-convex/convex-backend), the backend and frontend on a single container.
