@@ -19,4 +19,4 @@ docker run -ti -p 5173:5173 -e LLM_API_KEY=$HF_TOKEN ai-town
 ## How to run on Hugging Face
 
 You can duplicate this Space https://huggingface.co/spaces/radames/ai-town?duplicate=true, add your `HF_TOKEN`
-Then you can customize [constants.ts](/constants.ts) and [characters.ts](/characters.ts) as you wish, as well as the LLM model and embeddings model in [llm.ts](/llm.ts).
+Then you can customize [patches/constants.ts](patches/constants.ts) and [patches/characters.ts](patches/characters.ts) as you wish, as well as the LLM model and embeddings model in [patches/llm.ts](patches/llm.ts).
