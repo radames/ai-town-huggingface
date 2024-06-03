@@ -1,17 +1,3 @@
----
-title: AI Town on HuggingFace
-emoji: 🏠💻💌🤗
-colorFrom: green
-colorTo: red
-sdk: docker
-app_port: 5173
-pinned: false
-disable_embedding: true
-# header: mini
-short_description: AI Town on HuggingFace
-hf_oauth: true
----
-
 # AI Town 🏠💻💌 on Hugging Face 🤗
 
 [**Demo on Hugging Face Spaces**](https://huggingface.co/spaces/radames/ai-town)
