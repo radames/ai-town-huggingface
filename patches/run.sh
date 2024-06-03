@@ -17,5 +17,11 @@ else
     export VITE_CONVEX_URL=https://$SPACE_HOST/backend.convex.cloud
 fi
 
+export VITE_OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
+# Unsure if the following are necessary
+# export OAUTH_CLIENT_SECRET=$OAUTH_CLIENT_SECRET
+# export OAUTH_SCOPES=$OAUTH_SCOPES
+# export OPENID_PROVIDER_URL=$OPENID_PROVIDER_URL
+
 npm run dev:frontend -- --host 0.0.0.0 &
 run_convex_command dev

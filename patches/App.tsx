@@ -16,6 +16,7 @@ import InteractButton from './components/buttons/InteractButton.tsx';
 import FreezeButton from './components/FreezeButton.tsx';
 import { MAX_HUMAN_PLAYERS } from '../convex/constants.ts';
 import PoweredByConvex from './components/PoweredByConvex.tsx';
+import OAuthLogin from './components/buttons/OAuthLogin.tsx';
 
 export default function Home() {
   const [helpModalOpen, setHelpModalOpen] = useState(false);
@@ -90,7 +91,10 @@ export default function Home() {
 
         <footer className="justify-end bottom-0 left-0 w-full flex items-center mt-4 gap-3 p-6 flex-wrap pointer-events-none">
           <div className="flex gap-4 flex-grow pointer-events-none">
-            <FreezeButton />
+                  {/*
+          Users shall not be able freeze in multiplayer
+          <FreezeButton />
+     */}
             <MusicButton />
             <Button href="https://github.com/a16z-infra/ai-town" imgUrl={starImg}>
               Star
@@ -99,6 +103,7 @@ export default function Home() {
             <Button imgUrl={helpImg} onClick={() => setHelpModalOpen(true)}>
               Help
             </Button>
+            <OAuthLogin />
           </div>
           <a href="https://a16z.com" target="_blank">
             <img className="w-8 h-8 pointer-events-auto" src={a16zImg} alt="a16z" />
