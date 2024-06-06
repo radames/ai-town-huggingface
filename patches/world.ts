@@ -107,7 +107,6 @@ export const userStatus = query({
     if (!oauthToken) {
      return null;
     }
-    console.log("oauthToken", oauthToken)
     return oauthToken;
   },
 });
@@ -144,7 +143,7 @@ export const joinWorld = mutation({
       return await insertInput(ctx, world._id, 'join', {
         name: oauthToken,
         character: randomCharacter.character,
-        description: "This is you !",
+        description: `${oauthToken} is a Human player !`,
         tokenIdentifier: oauthToken,
       });
     },
@@ -160,7 +159,6 @@ export const leaveWorld = mutation({
     const { worldId, oauthToken } = args;
     
     
-    console.log('OAuth Name:', oauthToken);
     if (!oauthToken) {
       throw new ConvexError(`Not logged in`);
     }

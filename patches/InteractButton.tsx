@@ -17,7 +17,6 @@ export default function InteractButton() {
   const game = useServerGame(worldId);
   const oauth = JSON.parse(localStorage.getItem('oauth'));
   const oauthToken = oauth ? oauth.userInfo.fullname : undefined;
-  console.log(oauthToken)
   const humanTokenIdentifier = useQuery(api.world.userStatus, worldId ? { worldId, oauthToken } : 'skip');
   const userPlayerId =
     game && [...game.world.players.values()].find((p) => p.human === humanTokenIdentifier)?.id;
